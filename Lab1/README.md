@@ -1,5 +1,7 @@
 # Lab 1 - RPC e gRPC
 
-## B1 E B2
-Para rodar o servidor: `./b1_server`
-Para rodar o cliente: `./b1_client servidor`
+## B1
+- Para rodar o servidor: `./b1_server`
+- Para rodar o cliente: `./b1_client localhost`
+
+Por padrão o cliente utilizará o arquivo "entrada.txt" contido na pasta
