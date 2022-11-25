@@ -4,6 +4,9 @@
  * as a guideline for developing your own functions.
  */
 
+// Brenno Oliveira Silva - 190025379
+// Victor Souza Dantas Martins Lima - 190044403
+
 #include "b1.h"
 #include <stdio.h>
 #include <string.h>

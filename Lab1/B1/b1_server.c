@@ -4,13 +4,16 @@
  * as a guideline for developing your own functions.
  */
 
+//Brenno Oliveira Silva - 190025379 
+//Victor Souza Dantas Martins Lima - 190044403
+
 #include "b1.h"
 #include <string.h>
 #define MAX_CHAR 500
 #define MAX_WORD 15000
 
-char **
-contapalavra_1_svc(char **argp, struct svc_req *rqstp)
+	char **
+	contapalavra_1_svc(char **argp, struct svc_req *rqstp)
 {
 	printf("[LOG]Recebido: %s\n", *argp);
 
