@@ -55,7 +55,7 @@ static void dr_cb(rd_kafka_t *rk,
 }
 
 static int run_producer(const char *topic, int msgcnt,
-                        rd_kafka_conf_t *conf)
+                        rd_kafka_conf_t *conf, const char *user)
 {
         rd_kafka_t *rk;
         char errstr[512];
@@ -121,7 +121,6 @@ static int run_producer(const char *topic, int msgcnt,
         /* Produce messages */
         for (i = 0; run && i < msgcnt; i++)
         {
-                const char *user = "consumer";
                 rd_kafka_resp_err_t err;
 
                 fprintf(stderr, "Producing message #%d to %s: %s\n", i, topic, user);
@@ -129,7 +128,7 @@ static int run_producer(const char *topic, int msgcnt,
                 /* Asynchronous produce */
                 err = rd_kafka_producev(
                     rk,
-                    RD_KAFKA_V_TOPIC("labkafka2"),
+                    RD_KAFKA_V_TOPIC(topic),
                     RD_KAFKA_V_KEY(user, strlen(user)),
                     RD_KAFKA_V_VALUE(textFile1, strlen(textFile1)),
                     RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
@@ -178,21 +177,23 @@ int main(int argc, char **argv)
 {
         const char *topic;
         const char *config_file;
+        const char *user;
         rd_kafka_conf_t *conf;
 
-        if (argc != 3)
+        if (argc != 4)
         {
-                fprintf(stderr, "Usage: %s <topic> <config-file>\n", argv[0]);
+                fprintf(stderr, "Usage: %s <topic> <config-file> <user>\n", argv[0]);
                 exit(1);
         }
 
         topic = argv[1];
         config_file = argv[2];
+        user = argv[3];
 
         if (!(conf = read_config(config_file)))
                 return 1;
 
-        if (run_producer(topic, 1, conf) == -1)
+        if (run_producer(topic, 1, conf, user) == -1)
                 return 1;
 
         return 0;

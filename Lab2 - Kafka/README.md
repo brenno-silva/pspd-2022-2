@@ -1,17 +1,21 @@
 # Lab Kafka
+
+## Pré requisitos
+- librdkafka
+
 ## 1. Iniciar Docker
-`sudo docker compose up -d`
+`sudo docker compose up`
 
 ## 2. Compilar arquivos
 `make`
 
 ## 3. Rodar Producer
-`./producer labkafka config.ini`
+`./producer labkafka config.ini user`
 
 ## 4. Rodar Consumer
 `./consumer labkafka config.ini`
 
-## Comando que podem ser úteis
+## Comandos que podem ser úteis
 ### Entrar no bash do kafka
 `sudo docker exec -it lab2-kafka-kafka-1-1 bash`
 
