@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <librdkafka/rdkafka.h>
 
@@ -84,7 +85,7 @@ static int run_producer(const char *topic, int msgcnt,
         }
 
         FILE *file = fopen("entrada.txt", "r");
-        char *textFile = 0;
+        char *textFile1 = 0, *textFile2 = 0, *textFile3 = 0;
         long fileLength;
 
         if (file == NULL)
@@ -96,14 +97,26 @@ static int run_producer(const char *topic, int msgcnt,
         fseek(file, 0, SEEK_END);
         fileLength = ftell(file);
         fseek(file, 0, SEEK_SET);
-        textFile = malloc(fileLength);
+        textFile1 = malloc(fileLength);
+        textFile2 = malloc(fileLength/2);
+        textFile3 = malloc(fileLength/2);
 
-        if (textFile)
-                fread(textFile, 1, fileLength, file);
+        if (textFile1)
+                fread(textFile1, 1, fileLength, file);
 
         fclose(file);
 
-        printf("%s\n", textFile);
+        // for (int i = 0; i < fileLength/2; i++)
+        // {
+        //         textFile2[i] = textFile1[i];
+        // }
+
+        // for (int i = fileLength / 2, j = 0; i < fileLength; i++, j++)
+        // {
+        //         textFile3[j] = textFile1[i];
+        // }
+
+        //printf("%s\n", textFile1);
 
         /* Produce messages */
         for (i = 0; run && i < msgcnt; i++)
@@ -116,12 +129,21 @@ static int run_producer(const char *topic, int msgcnt,
                 /* Asynchronous produce */
                 err = rd_kafka_producev(
                     rk,
-                    RD_KAFKA_V_TOPIC(topic),
+                    RD_KAFKA_V_TOPIC("labkafka2"),
                     RD_KAFKA_V_KEY(user, strlen(user)),
-                    RD_KAFKA_V_VALUE(textFile, strlen(textFile)),
+                    RD_KAFKA_V_VALUE(textFile1, strlen(textFile1)),
                     RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
                     RD_KAFKA_V_OPAQUE(&delivery_counter),
                     RD_KAFKA_V_END);
+
+                // err = rd_kafka_producev(
+                //     rk,
+                //     RD_KAFKA_V_TOPIC("labkafka"),
+                //     RD_KAFKA_V_KEY(user, strlen(user)),
+                //     RD_KAFKA_V_VALUE(textFile1, strlen(textFile3)),
+                //     RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
+                //     RD_KAFKA_V_OPAQUE(&delivery_counter),
+                //     RD_KAFKA_V_END);
                 if (err)
                 {
                         fprintf(stderr, "Produce failed: %s\n",

@@ -1,21 +1,22 @@
 # Lab Kafka
-## Iniciar Docker
+## 1. Iniciar Docker
 `sudo docker compose up -d`
 
-## Entrar no bash do kafka
-`sudo docker exec -it lab2-kafka-kafka-1-1 bash`
-
-## Compilar arquivos
+## 2. Compilar arquivos
 `make`
 
-## Rodar Producer
+## 3. Rodar Producer
 `./producer labkafka config.ini`
 
-## Rodar Consumer
+## 4. Rodar Consumer
 `./consumer labkafka config.ini`
 
-## Docker Bash
-`kafka-console-producer --broker-list localhost:19092 --topic labkafka`
+## Comando que podem ser úteis
+### Entrar no bash do kafka
+`sudo docker exec -it lab2-kafka-kafka-1-1 bash`
 
-## Excluir tópico
-`kafka-topics --delete --bootstrap-server localhost:19092 --topic labkafka`
+### Docker Bash
+`kafka-console-producer --broker-list localhost:9092 --topic labkafka`
+
+### Excluir tópico
+`kafka-topics --delete --bootstrap-server localhost:9092 --topic labkafka`

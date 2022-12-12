@@ -22,8 +22,7 @@
 
 #include "common.h"
 
-#define MAX_CHAR 50000
-#define MAX_WORD 1500000
+#define MAX_CHAR 50
 
 struct user
 {
@@ -80,83 +79,48 @@ static int handle_message(rd_kafka_message_t *rkm)
         return 0;
 }
 
-char *contapalavra(char *argp)
+palavras *contaPalavra(char *argp)
 {
-        char **result = malloc(sizeof(char *) * MAX_WORD);
-        *result = "";
         char *aux = argp;
 
         char *palavra = malloc(sizeof(char) * MAX_CHAR);
         int qtdPalavras = 0;
-        palavras *contador = malloc(sizeof(palavras) * MAX_WORD);
+        palavras *contador = malloc(sizeof(palavras) * 3);
 
-        for (int i = 0; i < MAX_CHAR; i++)
-        {
-                contador[i].palavra = malloc(sizeof(char *) * MAX_CHAR);
-                contador[0].qtd = 0;
-        }
+        contador[0].palavra = "Menor que 6";
+        contador[0].qtd = 0;
 
-        for (int i = 0, j = 0, k = 0; i < strlen(aux); i++)
+        contador[1].palavra = "Entre 6 e 10";
+        contador[1].qtd = 0;
+
+        contador[2].palavra = "Total";
+        contador[2].qtd = 0;
+
+        for (int i = 0, j = 0; i < strlen(aux); i++)
         {
-                for (j = 0; aux[i] != ' '; i++, j++)
+                for (j = 0; aux[i] != ' ' && aux[i] != '\0'; i++, j++)
                 {
                         palavra[j] = aux[i];
-                        if (aux[i + 1] == ' ')
+                        if (aux[i + 1] == ' ' || aux[i] == '\0')
                         {
                                 palavra[j + 1] = '\0';
-                                if (qtdPalavras == 0)
-                                {
-                                        strcpy(contador[0].palavra, palavra);
-                                        contador[0].qtd = 1;
-                                        qtdPalavras++;
-                                }
-                                else
-                                {
-                                        for (k = 0; k < qtdPalavras; k++)
-                                        {
-                                                if (!strcmp(palavra, contador[k].palavra))
-                                                {
-                                                        contador[k].qtd++;
-                                                        break;
-                                                }
-                                        }
-                                        if (k == qtdPalavras)
-                                        {
-                                                strcpy(contador[k].palavra, palavra);
-                                                contador[k].qtd = 1;
-                                                qtdPalavras++;
-                                        }
-                                }
+
+                                int tamPalavra = strlen(palavra);
+
+                                if (tamPalavra < 6)
+                                        contador[0].qtd++;
+                                else if (tamPalavra >= 6 && tamPalavra <= 10)
+                                        contador[1].qtd++;
+
+                                contador[2].qtd++;
                         }
                 }
         }
 
-        free(palavra);
+        for (int i = 0; i < 3; i++)
+                printf("%s\t%d\n", contador[i].palavra, contador[i].qtd);
 
-        char *str = malloc(sizeof(char) * MAX_WORD);
-        char *str2 = malloc(sizeof(char) * MAX_WORD);
-
-        strcpy(str2, "|--Palavra--|--Quantidade--|\n");
-        for (int i = 0; i < qtdPalavras; i++)
-        {
-                sprintf(str, "%s\t\t%d\n", contador[i].palavra, contador[i].qtd);
-                strcat(str2, str);
-        }
-        printf("\n");
-
-        sprintf(str, "-----------------------------\n", qtdPalavras);
-        strcat(str2, str);
-        sprintf(str, "Quantidade de palavras: %d\n", qtdPalavras);
-        strcat(str2, str);
-
-        free(str);
-
-        *result = str2;
-
-        printf(*result);
-        free(str2);
-
-        return *result;
+        return contador;
 }
 
 static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
@@ -240,9 +204,8 @@ static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
                                 (int)rkm->partition, rkm->offset,
                                 (int)rkm->len, (const char *)rkm->payload);
                         handle_message(rkm);
-                        contapalavra(rkm->payload);
+                        contaPalavra(rkm->payload);
                 }
-
 
                 rd_kafka_message_destroy(rkm);
         }
