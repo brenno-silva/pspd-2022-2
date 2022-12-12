@@ -1,6 +1,6 @@
 BINS=consumer producer
 
-SRCS=common.c json.c
+SRCS=common.c
 LIBS=-lrdkafka -lm
 
 

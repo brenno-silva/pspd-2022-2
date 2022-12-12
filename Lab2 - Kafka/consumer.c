@@ -16,17 +16,26 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <librdkafka/rdkafka.h>
 
 #include "common.h"
-#include "json.h"
+
+#define MAX_CHAR 50000
+#define MAX_WORD 1500000
 
 struct user
 {
         char *name;
         int sum;
 };
+
+typedef struct
+{
+        char *palavra;
+        int qtd;
+} palavras;
 
 /* Only track the first 4 users seen, for keeping the example simple. */
 #define TRACK_USER_CNT 4
@@ -52,18 +61,9 @@ static struct user *find_user(const char *name, size_t namelen)
         return NULL; /* No free slots */
 }
 
-/**
- * @brief Handle a JSON-formatted message and update our counter state
- *        for the user specified in the message key.
- *
- * @returns 0 on success or -1 on parse error (non-fatal).
- */
 static int handle_message(rd_kafka_message_t *rkm)
 {
-        json_value *obj;
-        static char errstr[json_error_max];
-        json_settings settings = {.max_memory = 100000};
-        const char *expected_user = "alice";
+        const char *expected_user = "consumer";
         struct user *user;
         int i;
 
@@ -77,44 +77,88 @@ static int handle_message(rd_kafka_message_t *rkm)
             strncmp(rkm->key, expected_user, rkm->key_len))
                 return 0;
 
-        /* Value: expected a json object: { "count": 3 } */
-        obj = json_parse_ex(&settings, rkm->payload, rkm->len, errstr);
-        if (!obj)
-        {
-                fprintf(stderr, "Failed to parse JSON: %s\n", errstr);
-                return -1;
-        }
-
-        if (obj->type != json_object)
-        {
-                fprintf(stderr, "Expected JSON object\n");
-                json_value_free(obj);
-                return -1;
-        }
-
-        for (i = 0; i < obj->u.object.length; i++)
-        {
-                const json_object_entry *v = &obj->u.object.values[i];
-
-                if (strcmp(v->name, "count") ||
-                    v->value->type != json_integer)
-                        continue;
-
-                user->sum += v->value->u.integer;
-                printf("User %s sum %d\n", user->name, user->sum);
-                break;
-        }
-
-        json_value_free(obj);
-
         return 0;
 }
 
-/**
- * @brief Start and run consumer, assuming ownership of \p conf
- *
- * @returns 0 on success or -1 on error.
- */
+char *contapalavra(char *argp)
+{
+        char **result = malloc(sizeof(char *) * MAX_WORD);
+        *result = "";
+        char *aux = argp;
+
+        char *palavra = malloc(sizeof(char) * MAX_CHAR);
+        int qtdPalavras = 0;
+        palavras *contador = malloc(sizeof(palavras) * MAX_WORD);
+
+        for (int i = 0; i < MAX_CHAR; i++)
+        {
+                contador[i].palavra = malloc(sizeof(char *) * MAX_CHAR);
+                contador[0].qtd = 0;
+        }
+
+        for (int i = 0, j = 0, k = 0; i < strlen(aux); i++)
+        {
+                for (j = 0; aux[i] != ' '; i++, j++)
+                {
+                        palavra[j] = aux[i];
+                        if (aux[i + 1] == ' ')
+                        {
+                                palavra[j + 1] = '\0';
+                                if (qtdPalavras == 0)
+                                {
+                                        strcpy(contador[0].palavra, palavra);
+                                        contador[0].qtd = 1;
+                                        qtdPalavras++;
+                                }
+                                else
+                                {
+                                        for (k = 0; k < qtdPalavras; k++)
+                                        {
+                                                if (!strcmp(palavra, contador[k].palavra))
+                                                {
+                                                        contador[k].qtd++;
+                                                        break;
+                                                }
+                                        }
+                                        if (k == qtdPalavras)
+                                        {
+                                                strcpy(contador[k].palavra, palavra);
+                                                contador[k].qtd = 1;
+                                                qtdPalavras++;
+                                        }
+                                }
+                        }
+                }
+        }
+
+        free(palavra);
+
+        char *str = malloc(sizeof(char) * MAX_WORD);
+        char *str2 = malloc(sizeof(char) * MAX_WORD);
+
+        strcpy(str2, "|--Palavra--|--Quantidade--|\n");
+        for (int i = 0; i < qtdPalavras; i++)
+        {
+                sprintf(str, "%s\t\t%d\n", contador[i].palavra, contador[i].qtd);
+                strcat(str2, str);
+        }
+        printf("\n");
+
+        sprintf(str, "-----------------------------\n", qtdPalavras);
+        strcat(str2, str);
+        sprintf(str, "Quantidade de palavras: %d\n", qtdPalavras);
+        strcat(str2, str);
+
+        free(str);
+
+        *result = str2;
+
+        printf(*result);
+        free(str2);
+
+        return *result;
+}
+
 static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
 {
         rd_kafka_t *rk;
@@ -196,7 +240,9 @@ static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
                                 (int)rkm->partition, rkm->offset,
                                 (int)rkm->len, (const char *)rkm->payload);
                         handle_message(rkm);
+                        contapalavra(rkm->payload);
                 }
+
 
                 rd_kafka_message_destroy(rkm);
         }

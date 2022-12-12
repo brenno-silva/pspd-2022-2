@@ -3,7 +3,7 @@
 `sudo docker compose up -d`
 
 ## Entrar no bash do kafka
-`sudo docker exec -it labkafka-kafka-1-1 bash`
+`sudo docker exec -it lab2-kafka-kafka-1-1 bash`
 
 ## Compilar arquivos
 `make`
@@ -15,4 +15,7 @@
 `./consumer labkafka config.ini`
 
 ## Docker Bash
-`kafka-console-producer --broker-list localhost:1909-topic labkafka`
+`kafka-console-producer --broker-list localhost:19092 --topic labkafka`
+
+## Excluir tópico
+`kafka-topics --delete --bootstrap-server localhost:19092 --topic labkafka`
