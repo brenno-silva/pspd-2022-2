@@ -17,10 +17,13 @@
 
 ## Comandos que podem ser úteis
 ### Entrar no bash do kafka
-`sudo docker exec -it lab2-kafka-kafka-1-1 bash`
+`sudo docker exec -it kafka bash`
 
 ### Docker Bash
 `kafka-console-producer --broker-list localhost:9092 --topic labkafka`
 
 ### Excluir tópico
 `kafka-topics --delete --bootstrap-server localhost:9092 --topic labkafka`
+
+### Listar tópicos
+`kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic labkafka --from-beginning --max-messages 100`

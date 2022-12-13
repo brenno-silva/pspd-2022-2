@@ -40,6 +40,101 @@ typedef struct
 #define TRACK_USER_CNT 4
 static struct user users[TRACK_USER_CNT];
 
+static void dr_cb(rd_kafka_t *rk,
+                  const rd_kafka_message_t *rkmessage, void *opaque)
+{
+        int *delivery_counterp = (int *)rkmessage->_private; /* V_OPAQUE */
+
+        if (rkmessage->err)
+        {
+                fprintf(stderr, "Delivery failed for message %.*s: %s\n",
+                        (int)rkmessage->len, (const char *)rkmessage->payload,
+                        rd_kafka_err2str(rkmessage->err));
+        }
+        else
+        {
+                fprintf(stderr,
+                        "Message delivered to %s [%d] at offset %" PRId64
+                        " in %.2fms: %.*s\n",
+                        rd_kafka_topic_name(rkmessage->rkt),
+                        (int)rkmessage->partition,
+                        rkmessage->offset,
+                        (float)rd_kafka_message_latency(rkmessage) / 1000.0,
+                        (int)rkmessage->len, (const char *)rkmessage->payload);
+                (*delivery_counterp)++;
+        }
+}
+
+static int run_producer(const char *topic, int msgcnt,
+                        rd_kafka_conf_t *conf, const char *user, char *str)
+{
+        rd_kafka_t *rk;
+        char errstr[512];
+        int i;
+        int delivery_counter = 0;
+
+        /* Set up a delivery report callback that will be triggered
+         * from poll() or flush() for the final delivery status of
+         * each message produced. */
+        rd_kafka_conf_set_dr_msg_cb(conf, dr_cb);
+
+        /* Create producer.
+         * A successful call assumes ownership of \p conf. */
+        rk = rd_kafka_new(RD_KAFKA_PRODUCER, conf, errstr, sizeof(errstr));
+        printf(str);
+        if (!rk)
+        {
+                fprintf(stderr, "Failed to create producer: %s\n", errstr);
+                rd_kafka_conf_destroy(conf);
+                return -1;
+        }
+
+        /* Create the topic. */
+        if (create_topic(rk, topic, 1) == -1)
+        {
+                rd_kafka_destroy(rk);
+                return -1;
+        }
+
+        for (i = 0; i < msgcnt; i++)
+        {
+                rd_kafka_resp_err_t err;
+
+                fprintf(stderr, "Producing message #%d to %s: %s\n", i, topic, user);
+
+                /* Asynchronous produce */
+                err = rd_kafka_producev(
+                    rk,
+                    RD_KAFKA_V_TOPIC(topic),
+                    RD_KAFKA_V_KEY(user, strlen(user)),
+                    RD_KAFKA_V_VALUE(str, strlen(str)),
+                    RD_KAFKA_V_MSGFLAGS(RD_KAFKA_MSG_F_COPY),
+                    RD_KAFKA_V_OPAQUE(&delivery_counter),
+                    RD_KAFKA_V_END);
+
+                if (err)
+                {
+                        fprintf(stderr, "Produce failed: %s\n",
+                                rd_kafka_err2str(err));
+                        break;
+                }
+
+                /* Poll for delivery report callbacks to know the final
+                 * delivery status of previously produced messages. */
+                rd_kafka_poll(rk, 0);
+        }
+
+        rd_kafka_flush(rk, 15 * 1000);
+
+        /* Destroy the producer instance. */
+        rd_kafka_destroy(rk);
+
+        fprintf(stderr, "%d/%d messages delivered\n",
+                delivery_counter, msgcnt);
+
+        return 0;
+}
+
 static struct user *find_user(const char *name, size_t namelen)
 {
         int i;
@@ -79,10 +174,11 @@ static int handle_message(rd_kafka_message_t *rkm)
         return 0;
 }
 
-palavras *contaPalavra(char *argp)
+char *contaPalavra(char *argp)
 {
         char *aux = argp;
 
+        char *str = malloc(sizeof(char) * 30000);
         char *palavra = malloc(sizeof(char) * MAX_CHAR);
         int qtdPalavras = 0;
         palavras *contador = malloc(sizeof(palavras) * 3);
@@ -101,7 +197,7 @@ palavras *contaPalavra(char *argp)
                 for (j = 0; aux[i] != ' ' && aux[i] != '\0'; i++, j++)
                 {
                         palavra[j] = aux[i];
-                        if (aux[i + 1] == ' ' || aux[i] == '\0')
+                        if (aux[i + 1] == ' ' || aux[i+1] == '\0')
                         {
                                 palavra[j + 1] = '\0';
 
@@ -117,19 +213,19 @@ palavras *contaPalavra(char *argp)
                 }
         }
 
-        for (int i = 0; i < 3; i++)
-                printf("%s\t%d\n", contador[i].palavra, contador[i].qtd);
+        sprintf(str, "%d %d %d\n", contador[0].qtd, contador[1].qtd, contador[2].qtd);
 
-        return contador;
+        return str;
 }
 
-static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
+static int run_consumer(const char *topic, rd_kafka_conf_t *conf, const char *config_file)
 {
         rd_kafka_t *rk;
         char errstr[512];
         rd_kafka_resp_err_t err;
         rd_kafka_topic_partition_list_t *topics;
         int i;
+        char *str = malloc(sizeof(char *) * 5000);
 
         rd_kafka_conf_set(conf, "group.id", "cloud-example-c", NULL, 0);
 
@@ -204,7 +300,13 @@ static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
                                 (int)rkm->partition, rkm->offset,
                                 (int)rkm->len, (const char *)rkm->payload);
                         handle_message(rkm);
-                        contaPalavra(rkm->payload);
+                        str = contaPalavra(rkm->payload);
+                        rd_kafka_conf_t *conf2;
+                        if (!(conf2 = read_config(config_file)))
+                                return 1;
+
+                        if (run_producer("labkafkaresult", 1, conf2, "consumer", str) == -1)
+                                return 1;
                 }
 
                 rd_kafka_message_destroy(rkm);
@@ -221,6 +323,7 @@ static int run_consumer(const char *topic, rd_kafka_conf_t *conf)
                 if (users[i].name)
                         free(users[i].name);
 
+
         return 0;
 }
 
@@ -228,6 +331,7 @@ int main(int argc, char **argv)
 {
         const char *topic;
         const char *config_file;
+        const char *user = "consumer";
         rd_kafka_conf_t *conf;
 
         if (argc != 3)
@@ -242,7 +346,7 @@ int main(int argc, char **argv)
         if (!(conf = read_config(config_file)))
                 return 1;
 
-        if (run_consumer(topic, conf) == -1)
+        if (run_consumer(topic, conf, config_file) == -1)
                 return 1;
 
         return 0;
