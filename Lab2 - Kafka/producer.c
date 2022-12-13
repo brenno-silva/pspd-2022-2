@@ -1,18 +1,5 @@
-/**
- * Copyright 2020 Confluent Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Lab02 – Construindo aplicação utilizando Broker
+// Brenno Oliveira Silva - 190025379, Victor Souza Dantas Martins Lima - 190044403
 
 #include <stdio.h>
 #include <signal.h>
@@ -32,12 +19,6 @@ struct user
 #define TRACK_USER_CNT 4
 static struct user users[TRACK_USER_CNT];
 
-/**
- * @brief Delivery report callback, triggered by from poll() or flush()
- *        once for each produce():ed message to propagate its final delivery status.
- *
- *        A non-zero \c rkmessage->err indicates delivery failed permanently.
- */
 static void dr_cb(rd_kafka_t *rk,
                   const rd_kafka_message_t *rkmessage, void *opaque)
 {

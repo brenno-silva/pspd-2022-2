@@ -1,18 +1,5 @@
-/**
- * Copyright 2020 Confluent Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Lab02 – Construindo aplicação utilizando Broker
+// Brenno Oliveira Silva - 190025379, Victor Souza Dantas Martins Lima - 190044403
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -34,11 +21,6 @@ static void handle_ctrlc (int sig) {
         run = 0;
 }
 
-
-/**
- * @brief Read key=value client configuration file from \p config_file,
- *        returning a populated config object on success, or NULL on error.
- */
 rd_kafka_conf_t *read_config (const char *config_file) {
         FILE *fp;
         rd_kafka_conf_t *conf;
@@ -109,13 +91,6 @@ rd_kafka_conf_t *read_config (const char *config_file) {
         return conf;
 }
 
-
-
-/**
- * @brief Create topic using Admin API of an existing client instance.
- *
- * @returns 0 on success or -1 on error.
- */
 int create_topic (rd_kafka_t *rk, const char *topic,
                   int num_partitions) {
         rd_kafka_NewTopic_t *newt;
